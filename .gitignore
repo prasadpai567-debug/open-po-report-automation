@@ -1,0 +1,20 @@
+# Do not commit the original or generated workbooks.
+*.xlsm
+*.xlsx
+*.xls
+*.xlsb
+
+# Local analysis and temporary files.
+work/
+outputs/
+*.tmp
+*.bak
+~$*
+
+# Generated report exports and local temp folders.
+reports/
+temp/
+
+# Operating-system files.
+Thumbs.db
+.DS_Store
