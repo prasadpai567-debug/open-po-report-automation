@@ -1,237 +1,182 @@
 # Open PO Report Automation
 
-Excel VBA automation that retrieves an open purchase order report from SAP, exports the result as an Excel file, and prepares an Outlook email with the report attached.
+> [!IMPORTANT]
+> Repository status (2026-11-01): this public repository currently contains documentation only: .gitignore, README.md, and ANALYSIS_REPORT.md. The Excel workbook and VBA source described below are not committed, so the automation cannot be run from this repository. The implementation details are based on a separately inspected workbook and are not verifiable from the current GitHub tree.
 
-The inspected workbook is configured for a specific business area. Its worksheet label and email content contain organization-specific values, so the public repository should use a sanitized copy before publication.
+## What is verifiable here
+
+The GitHub tree verifies the documentation files and publication safeguards. It does not verify SAP, Excel, VBA, or Outlook behavior. Do not treat this repository as a runnable release until a sanitized workbook or source package has been added and reviewed.
 
 ## Project overview
 
-The application reduces the repeated manual work involved in producing and distributing an open purchase order report:
+This repository documents an Excel VBA workflow intended to retrieve an open purchase-order report from SAP, export the result as an Excel file, and prepare an Outlook email draft for human review.
 
-1. The user enters a start date and end date in the workbook.
-2. VBA connects to an already logged-in SAP GUI session.
-3. SAP transaction `ME2N` is opened and a saved selection variant is applied.
-4. The date range is entered and the report is exported as an `.xlsx` file.
-5. Outlook is used to prepare a standardized email with the exported report attached.
-
-The current macro displays the email for review. It does not send the message automatically.
+The documented workflow is designed to reduce repeated procurement reporting steps while keeping final email delivery under user control.
 
 ## Business problem solved
 
-Without automation, the user must repeatedly navigate SAP, apply the same report variant, enter dates, export the report, rename or locate the file, and create a standard email. This workbook turns that sequence into one repeatable button-driven process while keeping the final email under human review.
+Without automation, a user must repeatedly navigate SAP, apply the same report variant, enter dates, export the report, locate or rename the output file, and create a standard email. The documented workflow turns that sequence into a repeatable button-driven process.
 
-## Implemented features
+No quantified time savings or error-rate improvements are claimed because the repository contains no measured operational results.
 
-- Cell-based date inputs for report start and end dates.
-- One-click execution from the worksheet button assigned to `SAP_Final_Solution`.
-- Connection to the first active SAP GUI connection and session.
-- Navigation to SAP transaction `ME2N`.
-- Selection of a configured saved variant.
-- Population of the SAP document-date range from cells `B2` and `B3`.
-- SAP report execution and spreadsheet export.
-- Creation of `C:\TEMP` when the local folder does not exist.
-- Date-based output filename in the form `<BUSINESS AREA> OPEN PO REPORT <end-date>.XLSX` in the source workbook.
-- Outlook draft creation with subject, body, recipient fields, and the exported report attached.
-- Manual review before sending because the macro uses Outlook `.Display`, not `.Send`.
-- Early exit with a message if no active SAP session is found.
+## Documented workflow capabilities
+
+The following behavior is recorded from a separately inspected workbook. It is not verifiable from the current GitHub tree until a sanitized workbook or source package is added.
+
+- Enter report start and end dates in worksheet cells B2 and B3.
+- Connect to an already logged-in SAP GUI session.
+- Open SAP transaction ME2N and apply a configured saved variant.
+- Enter a document-date range and export the report as an Excel file.
+- Save the output under a local temporary folder using a date-based filename.
+- Create an Outlook draft with the exported report attached.
+- Display the draft for review; the documented behavior does not send the email automatically.
+- Exit with a message when no active SAP session is found.
 
 ## Application workflow
 
-```mermaid
-flowchart LR
-    A[Excel date inputs<br/>B2 and B3] --> B[Run Macro button]
-    B --> C[Read dates and build filename]
-    C --> D[Connect to active SAP GUI session]
-    D --> E[Open ME2N and apply saved variant]
-    E --> F[Enter document-date range]
-    F --> G[Execute and export report]
-    G --> H[Save XLSX to local temp folder]
-    H --> I[Create Outlook draft]
-    I --> J[Attach report and display for review]
-```
+1. Enter the start date and end date in the workbook.
+2. Click the Run Macro button.
+3. Connect to the active SAP GUI session.
+4. Open ME2N and apply the saved variant.
+5. Enter the date range and execute the report.
+6. Export the report to a local file.
+7. Create and display an Outlook draft with the report attached.
+8. Review the date range, report content, recipients, subject, and attachment before sending manually.
 
-### Inputs and outputs
+## Inputs and outputs
 
-| Item | Current implementation |
+| Item | Documented behavior |
 | --- | --- |
-| Workbook input sheet | One visible sheet configured for the business area |
-| Start date | `B2` |
-| End date | `B3` |
-| SAP transaction | `ME2N` |
-| SAP saved variant | Configured in the source workbook; configuration-specific |
-| Local output folder | `C:\TEMP` |
-| Output format | Excel `.xlsx` |
+| Start date | Worksheet cell B2 |
+| End date | Worksheet cell B3 |
+| SAP transaction | ME2N |
+| Output format | Excel .xlsx |
 | Email client | Microsoft Outlook desktop |
-| Email action | Draft is displayed for user review; not sent automatically |
+| Email action | Draft displayed for review; not sent automatically |
 
-## Technical details
+## Technology stack
 
-### Technology stack
+- Microsoft Excel macro-enabled workbook (.xlsm)
+- Visual Basic for Applications (VBA)
+- SAP GUI Scripting through late-bound COM objects
+- Microsoft Outlook desktop automation
+- Windows local file system
 
-- Microsoft Excel macro-enabled workbook (`.xlsm`).
-- Visual Basic for Applications (VBA).
-- SAP GUI Scripting through late-bound COM objects.
-- Microsoft Outlook automation through late-bound COM objects.
-- Windows local file system for report output.
+## Intended runtime requirements
 
-### VBA project structure
-
-The inspected VBA project contains:
-
-- `Module1` with the public procedure `SAP_Final_Solution`.
-- `Sheet1` for the worksheet named by the workbook; no worksheet event code was found.
-- `ThisWorkbook`; no workbook event code was found.
-- No UserForms.
-- No additional standard modules or custom class modules.
-
-### Excel workbook structure
-
-- One visible worksheet.
-- Used cell range: `A1:B3`.
-- Row 1 contains the label and value headers.
-- Rows 2 and 3 contain the date labels and values.
-- One worksheet form button labeled `Run Macro`.
-- No formulas, Excel tables, PivotTables, charts, named ranges, or external-link parts were found in the inspected package.
-
-### Integration behavior
-
-The VBA code uses SAP GUI control IDs to navigate the SAP screens and export the report. It also creates an Outlook mail item using `CreateObject("Outlook.Application")`. Because both integrations are late-bound, the VBA project does not require a checked reference to the SAP or Outlook object libraries, but the corresponding desktop applications and permissions are still required at runtime.
-
-## Requirements
-
-- Windows with desktop Microsoft Excel and VBA support.
-- Permission to run macros according to the organization's Microsoft Office policy.
-- SAP GUI for Windows with SAP GUI Scripting enabled on the client and, where required, on the SAP system.
-- An active SAP logon session with authorization to run the configured report transaction and saved variant.
-- Microsoft Outlook desktop with a usable profile if email drafting is required.
-- Write access to the configured local output folder.
+- Windows with desktop Microsoft Excel and VBA support
+- SAP GUI for Windows with GUI Scripting enabled
+- An active SAP logon session with access to ME2N and the configured variant
+- Microsoft Outlook desktop with a usable profile
+- Write access to the approved output folder
+- Organization-approved macro execution permissions
 
 ## Installation and setup
 
+> These steps describe the intended runtime setup. They are not currently executable from this repository because the workbook is not included.
+
 1. Download or clone the repository.
-2. Use only the sanitized workbook intended for public sharing. Do not publish the original production workbook.
-3. Open the `.xlsm` file in desktop Microsoft Excel. Excel may open downloaded files in Protected View or block macros because the file is untrusted. Follow the organization's approved trusted-location or file-unblocking process; do not disable macro security globally.
-4. Confirm that the worksheet contains the expected date inputs in `B2` and `B3`.
-5. Confirm that the SAP saved variant and transaction are valid for the target SAP environment.
-6. Confirm that `C:\TEMP` is writable, or update the macro in a controlled internal copy if the output path has been parameterized.
+2. Obtain an approved sanitized workbook from the project owner.
+3. Open the workbook in desktop Excel and follow the organization's macro-security policy.
+4. Confirm that the expected date inputs exist in B2 and B3.
+5. Confirm that the SAP transaction and saved variant are valid for the target environment.
+6. Confirm that the approved output folder is writable.
 7. Log in to SAP before running the macro.
 8. Open Outlook if the email-draft step is required.
 
 ## Usage
 
-1. Enter the required report start date in `B2`.
-2. Enter the required report end date in `B3`.
-3. Log in to SAP GUI and leave the required session active.
-4. Click `Run Macro`.
-5. Wait for SAP to complete the report export.
-6. Review the Outlook draft and its attachment.
-7. Verify the date range, report content, recipients, subject, and attachment before sending manually.
+1. Enter the report start date in B2.
+2. Enter the report end date in B3.
+3. Leave the required SAP GUI session active.
+4. Click Run Macro.
+5. Wait for the SAP export to complete.
+6. Review the Outlook draft and attachment.
+7. Verify all report and recipient details before sending manually.
 
-## Known limitations and operational risks
+## Validation and testing status
 
-These are characteristics of the current implementation, not completed improvements:
-
-- SAP GUI control paths are tightly coupled to the current SAP screen layout and transaction configuration.
-- The saved variant name is hard-coded.
-- The output folder and filename pattern are hard-coded.
-- The macro does not validate that the start date is valid, that the end date is valid, or that the start date is before the end date.
-- SAP and Outlook initialization use `On Error Resume Next`, which can hide connection or object-creation failures.
-- The export is not explicitly verified by checking that the output file exists before Outlook attaches it.
-- The macro assumes the first SAP connection and first SAP session are the correct ones.
-- The email recipients, sender-on-behalf address, greeting, and business-area wording are hard-coded in the source workbook.
-- The macro was inspected statically and was not executed against SAP or Outlook during documentation preparation.
+- Repository tree and metadata review: completed.
+- Static workbook/VBA review: recorded in ANALYSIS_REPORT.md, but the inspected workbook is not committed here.
+- Automated tests: none present.
+- Excel, SAP GUI, and Outlook runtime testing: not performed.
+- No production data was modified.
 
 ## Security and publication checklist
 
-Before uploading any file to GitHub:
+Before adding any workbook or source file:
 
-- Remove or replace hard-coded recipient, CC, and sender-on-behalf addresses.
-- Remove company names, plant or site names, internal mailbox names, and internal business wording unless publication is authorized.
-- Remove or replace SAP transaction variants and internal configuration identifiers if they are not intended to be public.
-- Remove personal author metadata and organization metadata from the workbook properties.
-- Remove SharePoint, OneDrive, or other internal paths embedded in workbook metadata.
-- Remove sample production dates and any report outputs that contain supplier, purchase order, material, price, or other business data.
-- Do not publish generated `.xlsx` reports, email exports, or files from `C:\TEMP`.
-- Test the sanitized copy with synthetic dates and non-production recipients.
-- Use a digitally signed or organization-approved macro distribution process for internal deployment.
+- Use a sanitized copy only.
+- Remove recipient, CC, sender-on-behalf, company, plant, and internal mailbox values.
+- Remove internal SharePoint, OneDrive, and local storage paths.
+- Remove personal and organization metadata from the workbook properties.
+- Remove production dates and any supplier, purchase-order, material, price, or report data.
+- Do not commit generated Excel reports or email exports.
+- Test with synthetic dates and non-production recipients.
+- Use an approved signing and deployment process for internal macro distribution.
 
-## Recommended repository structure
+## Known limitations and operational risks
 
-```text
+The separately inspected workbook was reported to have the following limitations:
+
+- SAP GUI control paths are coupled to the current screen layout and configuration.
+- The saved variant and output settings are hard-coded.
+- Date values are not fully validated before execution.
+- Broad error suppression can hide SAP or Outlook failures.
+- Export completion and output-file existence are not explicitly verified.
+- The first SAP connection and session may not be the intended ones when multiple sessions are open.
+- No retry, timeout, execution log, or completion status is currently documented.
+- Email content and recipients are not configurable from the worksheet.
+
+## Recommended publication structure
+
+~~~text
 open-po-report-automation/
 ├── README.md
-├── LICENSE
+├── ANALYSIS_REPORT.md
 ├── .gitignore
+├── LICENSE                    # only after distribution rights are confirmed
 ├── workbook/
 │   ├── OpenPO_Report_Automation_sanitized.xlsm
-│   └── src/
-│       └── Module1.bas
+│   └── src/Module1.bas
 ├── docs/
 │   ├── architecture.md
 │   ├── setup-notes.md
 │   └── screenshots/
-│       ├── input-sheet.png
-│       ├── vba-project.png
-│       ├── sap-selection.png
-│       ├── export-dialog.png
-│       └── outlook-draft.png
 └── examples/
     └── sample-input-notes.md
-```
+~~~
 
-### Files to upload
+The original production workbook should remain outside the public repository. If it cannot be sanitized safely, publish documentation and synthetic examples instead.
 
-Recommended:
+## Screenshots and demonstrations
 
-- `README.md`.
-- A sanitized `.xlsm` workbook if redistribution is allowed.
-- An exported, sanitized `Module1.bas` file for source visibility and review.
-- Synthetic examples or screenshots with all business data redacted.
-- Setup and architecture notes.
+Use redacted or synthetic examples only. Suggested placeholders:
 
-Do not upload the original workbook, production report exports, unredacted VBA source, internal email addresses, or internal storage paths.
-
-## Suggested screenshots
-
-Use screenshots that demonstrate the workflow without revealing production data:
-
-1. Excel input sheet showing the two date fields and `Run Macro` button with synthetic dates.
-2. VBA Project Explorer showing the small project structure.
-3. SAP selection screen showing the date range and a redacted saved-variant field.
-4. SAP export dialog showing a redacted output path.
-5. Generated report file in a sanitized local folder.
-6. Outlook draft showing a redacted recipient list and the attached report.
+- Excel input sheet showing B2, B3, and the Run Macro button
+- VBA Project Explorer with internal addresses and paths removed
+- SAP selection screen with the saved variant redacted
+- SAP export dialog using a non-production path
+- Outlook draft with recipients redacted
 
 ## Future improvements
 
-The following are suggested improvements and are not implemented in the inspected workbook:
-
-- Move the transaction, variant, output folder, email recipients, and message template to a protected configuration sheet.
-- Add date validation and a clear start-date/end-date error message.
+- Add date validation and clear user-facing error messages.
 - Replace broad error suppression with structured error handling and an execution log.
-- Check that SAP export completed and that the output file exists before creating the email draft.
-- Use a user-specific temporary folder or a configurable output directory instead of a fixed `C:\TEMP` path.
-- Add a confirmation step before creating the email draft and a clear completion message after export.
-- Make the SAP session and connection selection explicit instead of always using the first child object.
-- Add a test mode or mock integration for demonstrations that do not have SAP access.
+- Verify SAP export completion and output-file existence before creating the draft.
+- Use a configurable or user-specific output folder.
+- Select the intended SAP connection and session explicitly.
+- Add an offline test mode using synthetic or mocked data.
 - Digitally sign the VBA project for controlled internal deployment.
 
-## Portfolio description
+## Portfolio summary
 
-### GitHub profile
+Developed a desktop Excel VBA automation workflow for procurement reporting. The documented solution reads a selected date range, drives SAP GUI to retrieve an open purchase-order report, saves the result as an Excel file, and prepares a reviewable Outlook draft with the report attached.
 
-Excel VBA automation that connects to SAP GUI, runs a configured open purchase order report for a selected date range, exports the result to Excel, and prepares an Outlook email with the report attached. The project demonstrates Excel VBA, SAP GUI scripting, desktop automation, process standardization, and procurement operations knowledge.
-
-### Resume bullet
-
-Built an Excel VBA automation tool that integrates with SAP GUI to generate date-filtered open purchase order reports, export them to Excel, and prepare standardized Outlook communications, reducing repetitive procurement reporting steps and improving process consistency.
-
-### LinkedIn or portfolio summary
-
-Developed a desktop Excel VBA automation solution for procurement reporting. The tool reads a user-selected date range, drives SAP GUI to retrieve an open purchase order report, saves the output as an Excel file, and prepares a reviewable Outlook draft with the report attached.
+Skills demonstrated: Excel VBA, SAP GUI Scripting, Microsoft Office automation, COM integration, procurement operations, process mapping, documentation, and data confidentiality awareness.
 
 ## License and data note
 
-Choose a license only after confirming that the code and workbook may be distributed publicly. The original workbook contains organization-specific metadata and hard-coded communication details, so it should be treated as an internal asset until sanitized and approved for release.
+Choose a license only after confirming that the code and workbook may be distributed publicly. The original workbook was reported to contain organization-specific metadata and hard-coded communication details, so it should remain an internal asset until sanitized and approved for release.
 
-
+For the detailed evidence and limitations, see ANALYSIS_REPORT.md.
