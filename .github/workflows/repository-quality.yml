@@ -1,0 +1,49 @@
+name: Repository quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s README.md
+          test -s ANALYSIS_REPORT.md
+          test -f .gitignore
+
+      - name: Check whitespace errors
+        run: git diff --check
+
+      - name: Check publication boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files -z | grep -Eazq '(^|/)([^/]+\.(xlsm|xlsx|xlsb|xls))$'; then
+            echo "Tracked Excel workbook artifacts are not allowed in this documentation-only repository."
+            git ls-files | grep -Ei '(^|/)([^/]+\.(xlsm|xlsx|xlsb|xls))$'
+            exit 1
+          fi
+          grep -Fq "not be run from this repository" README.md
+          grep -Fq "not verifiable from the current GitHub tree" README.md
+
+      - name: Validate Markdown structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in README.md ANALYSIS_REPORT.md; do
+            grep -Eq '^# ' "$file"
+          done
